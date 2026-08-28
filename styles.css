@@ -43,3 +43,16 @@ header small{color:#4ed879;font-weight:900} header h1{margin:3px 0 0;font-size:2
 .alert{background:#fff5df;border:1px solid #f0d89c;border-radius:10px;padding:10px}.ok{background:#eaf6ee;border:1px solid #cde8d5;border-radius:10px;padding:10px}
 @media(max-width:900px){.nav{grid-template-columns:repeat(4,1fr)}.metrics{grid-template-columns:repeat(2,1fr)}.settingsLayout{grid-template-columns:1fr}.settingsMenu{position:static;display:flex;overflow:auto;gap:5px}.settingsMenu button{white-space:nowrap;width:auto}.marketRow{grid-template-columns:1fr}.stockrow{grid-template-columns:1fr .7fr .6fr}.stockrow .hideM{display:none}}
 @media(max-width:600px){.wrap{padding:9px}.grid2,.grid3,.buybox{grid-template-columns:1fr}.nav{grid-template-columns:repeat(3,1fr)}.rewardRow{grid-template-columns:1fr 110px}.rewardRow button{grid-column:1/-1}.portfolioRow{grid-template-columns:1fr .7fr}.portfolioRow .hideM{display:none}}
+
+.lineupLayout{display:grid;grid-template-columns:170px minmax(0,1fr) 260px;gap:10px}
+.formations button{display:block;width:100%;margin:6px 0;border:1px solid var(--line);background:#fff;border-radius:9px;padding:9px;font-weight:800;cursor:pointer}
+.formations button.active{background:#ddf2e5;color:#0c7b37}
+.pitch{background:linear-gradient(#2f8b48,#287a40);border-radius:16px;min-height:520px;padding:16px;display:grid;grid-template-rows:repeat(5,1fr);gap:8px;position:relative;border:3px solid rgba(255,255,255,.6)}
+.pitch:before{content:"";position:absolute;left:0;right:0;top:50%;border-top:2px solid rgba(255,255,255,.5)}
+.pitchRow{display:flex;justify-content:center;gap:10px;align-items:center;z-index:2}
+.slot{width:90px;min-height:62px;border:2px dashed rgba(255,255,255,.75);border-radius:10px;background:rgba(255,255,255,.13);color:#fff;padding:6px;text-align:center;font-size:11px;cursor:pointer}
+.slot.filled{background:#fff;color:#17351f;border-style:solid}
+.slot.selected{outline:3px solid #ffe388}
+.playerPick{padding:8px;border-bottom:1px solid var(--line);cursor:pointer;border-radius:7px}.playerPick:hover{background:#f2f7f4}
+.classRow{display:grid;grid-template-columns:50px 1fr 100px 110px 110px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+@media(max-width:900px){.lineupLayout{grid-template-columns:1fr}.formations{display:flex;overflow:auto;gap:6px}.formations button{width:auto;white-space:nowrap}.pitch{min-height:430px}.classRow{grid-template-columns:42px 1fr 80px}.classRow .hideM{display:none}}

@@ -15,11 +15,11 @@ function defaults(){
   },
   clubValue:0,cash:0,players:[],market:[],bids:{},listed:[],transactions:[],
   portfolio:{},stocks:stockSeed.map(x=>JSON.parse(JSON.stringify(x))),selectedStock:1,
-  sponsorIncome:0,leagueIncome:0,dividendsPaid:0,ipoActive:false,ipoPct:0
+  sponsorIncome:0,leagueIncome:0,dividendsPaid:0,ipoActive:false,ipoPct:0,formation:"4-3-3",lineup:{},pointsTotal:0,pointsRound:0
  }
 }
-let s;try{s=JSON.parse(localStorage.getItem("fm051"))||defaults()}catch(e){s=defaults()}
-function save(){localStorage.setItem("fm051",JSON.stringify(s))}
+let s;try{s=JSON.parse(localStorage.getItem("fm052"))||defaults()}catch(e){s=defaults()}
+function save(){localStorage.setItem("fm052",JSON.stringify(s))}
 function money(x){return Number(x).toLocaleString("es-ES",{minimumFractionDigits:0,maximumFractionDigits:2})+" M€"}
 function euro(x){return Number(x).toLocaleString("es-ES",{maximumFractionDigits:0})+" €"}
 function initials(n){return n.split(" ").map(x=>x[0]).join("").slice(0,2)}
@@ -58,7 +58,7 @@ function makeMarket(){
  s.market=available.slice(0,s.settings.marketCount).map(p=>({...p,ask:p.v,close:"23:59"}));
 }
 function nav(active){
- let items=[["home","🏠 Inicio"],["team","👥 Equipo"],["market","🔁 Mercado"],["stocks","📈 Bolsa"],["economy","💰 Economía"],["settings","⚙️ Configuración"],["news","📰 Tablón"]];
+ let items=[["home","🏠 Inicio"],["team","👥 Equipo"],["lineup","🟩 Alineación"],["market","🔁 Mercado"],["table","🏆 Clasificación"],["stocks","📈 Bolsa"],["economy","💰 Economía"],["settings","⚙️ Configuración"],["news","📰 Tablón"]];
  return '<div class="nav">'+items.map(([k,l])=>'<button data-go="'+k+'" class="'+(active===k?'active':'')+'">'+l+'</button>').join("")+'</div>'
 }
 function bindNav(){document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>pages[b.dataset.go]()))}
@@ -94,7 +94,7 @@ function teamCreate(){
 function home(){
  T.textContent=s.team;
  let total=totalWealth();
- A.innerHTML='<div class="wrap">'+nav("home")+'<section class="card"><div class="sectionTitle"><div><span class="badge">Liga activa</span><h2>'+s.team+'</h2><div class="muted">'+s.league+'</div></div></div><div class="metrics"><div class="metric"><small>Saldo</small><b>'+money(s.cash)+'</b></div><div class="metric"><small>Plantilla</small><b>'+money(value(s.players))+'</b></div><div class="metric"><small>Cartera bolsa</small><b>'+money(portfolioValue())+'</b></div><div class="metric"><small>Patrimonio</small><b>'+money(total)+'</b></div></div></section><section class="card"><h3>Accesos rápidos</h3><div class="toolbar"><button class="primary" data-go="market">Ir al mercado</button><button class="secondary" data-go="stocks">Invertir en bolsa</button><button class="secondary" data-go="settings">Configurar liga</button></div></section><section class="card"><h3>Reglas económicas</h3><div class="summaryline"><span>Premio por punto</span><b>'+euro(s.settings.rewardPerPoint)+'</b></div><div class="summaryline"><span>Premio 1.º jornada</span><b>'+euro(s.settings.rewardRankPool)+'</b></div><div class="summaryline"><span>Máximo sponsor variable</span><b>'+euro(maxLeagueReward())+'</b></div><div class="summaryline"><span>Máximo dividendo/jornada</span><b>'+euro(maxLeagueReward())+'</b></div></section></div>';bindNav()
+ A.innerHTML='<div class="wrap">'+nav("home")+'<section class="card"><div class="sectionTitle"><div><span class="badge">Liga activa</span><h2>'+s.team+'</h2><div class="muted">'+s.league+'</div></div></div><div class="metrics"><div class="metric"><small>Saldo</small><b>'+money(s.cash)+'</b></div><div class="metric"><small>Plantilla</small><b>'+money(value(s.players))+'</b></div><div class="metric"><small>Cartera bolsa</small><b>'+money(portfolioValue())+'</b></div><div class="metric"><small>Patrimonio</small><b>'+money(total)+'</b></div></div></section><section class="card"><h3>Accesos rápidos</h3><div class="toolbar"><button class="primary" data-go="lineup">Hacer alineación</button><button class="secondary" data-go="market">Ir al mercado</button><button class="secondary" data-go="stocks">Invertir en bolsa</button><button class="secondary" data-go="settings">Configurar liga</button></div></section><section class="card"><h3>Reglas económicas</h3><div class="summaryline"><span>Premio por punto</span><b>'+euro(s.settings.rewardPerPoint)+'</b></div><div class="summaryline"><span>Premio 1.º jornada</span><b>'+euro(s.settings.rewardRankPool)+'</b></div><div class="summaryline"><span>Máximo sponsor variable</span><b>'+euro(maxLeagueReward())+'</b></div><div class="summaryline"><span>Máximo dividendo/jornada</span><b>'+euro(maxLeagueReward())+'</b></div></section></div>';bindNav()
 }
 function team(){
  T.textContent="Equipo";
@@ -147,6 +147,48 @@ function tradeStock(id,dir){
  else{if(pos.qty<qty)return alert("No tienes tantas acciones.");pos.qty-=qty;s.cash+=cost;if(pos.qty===0)delete s.portfolio[id];else s.portfolio[id]=pos;s.transactions.unshift("Venta bolsa · "+st.name+" · "+qty+" acc.");}
  save();stocks();
 }
+
+const formations={
+ "4-3-3":[["DEL","DEL","DEL"],["MED","MED","MED"],["DEF","DEF","DEF","DEF"],["POR"]],
+ "4-4-2":[["DEL","DEL"],["MED","MED","MED","MED"],["DEF","DEF","DEF","DEF"],["POR"]],
+ "4-2-3-1":[["DEL"],["MED","MED","MED"],["MED","MED"],["DEF","DEF","DEF","DEF"],["POR"]],
+ "4-1-4-1":[["DEL"],["MED","MED","MED","MED"],["MED"],["DEF","DEF","DEF","DEF"],["POR"]],
+ "3-5-2":[["DEL","DEL"],["MED","MED","MED","MED","MED"],["DEF","DEF","DEF"],["POR"]],
+ "3-4-3":[["DEL","DEL","DEL"],["MED","MED","MED","MED"],["DEF","DEF","DEF"],["POR"]],
+ "5-3-2":[["DEL","DEL"],["MED","MED","MED"],["DEF","DEF","DEF","DEF","DEF"],["POR"]],
+ "5-4-1":[["DEL"],["MED","MED","MED","MED"],["DEF","DEF","DEF","DEF","DEF"],["POR"]]
+};
+let selectedSlot=null;
+function lineup(){
+ T.textContent="Alineación";
+ let f=formations[s.formation]||formations["4-3-3"];
+ let idx=0;
+ let pitch=f.map(row=>'<div class="pitchRow">'+row.map(pos=>{let key="s"+(idx++),pid=s.lineup[key],pl=s.players.find(x=>x.id===pid);return '<button class="slot '+(pl?'filled':'')+'" data-slot="'+key+'" data-pos="'+pos+'"><b>'+pos+'</b><br>'+(pl?pl.n:'Vacío')+'</button>'}).join("")+'</div>').join("");
+ let flist=Object.keys(formations).map(x=>'<button data-form="'+x+'" class="'+(x===s.formation?'active':'')+'">'+x+'</button>').join("");
+ let plist=["POR","DEF","MED","DEL"].map(pos=>'<div><h4>'+pos+'</h4>'+s.players.filter(p=>p.p===pos).map(p=>'<div class="playerPick" data-player="'+p.id+'"><b>'+p.n+'</b><div class="club">'+p.club+' · '+money(p.v)+'</div></div>').join("")+'</div>').join("");
+ let count=Object.keys(s.lineup).filter(k=>s.lineup[k]).length;
+ A.innerHTML='<div class="wrap">'+nav("lineup")+'<section class="card"><div class="sectionTitle"><div><h3>Alineación</h3><div class="muted">Empieza vacía. Selecciona una casilla y después un jugador compatible.</div></div><span class="badge">'+count+'/11 titulares</span></div><div class="lineupLayout"><aside class="formations">'+flist+'</aside><div class="pitch">'+pitch+'</div><aside class="card"><h3>Jugadores</h3>'+plist+'</aside></div><div class="toolbar" style="margin-top:10px"><button class="secondary" id="clearLineup">Vaciar</button><button class="primary" id="saveLineup">Guardar alineación</button></div></section></div>';
+ document.querySelectorAll("[data-form]").forEach(b=>b.onclick=()=>{s.formation=b.dataset.form;s.lineup={};save();lineup()});
+ document.querySelectorAll("[data-slot]").forEach(b=>b.onclick=()=>{selectedSlot={key:b.dataset.slot,pos:b.dataset.pos};document.querySelectorAll(".slot").forEach(x=>x.classList.remove("selected"));b.classList.add("selected")});
+ document.querySelectorAll("[data-player]").forEach(b=>b.onclick=()=>assignPlayer(Number(b.dataset.player)));
+ document.getElementById("clearLineup").onclick=()=>{s.lineup={};save();lineup()};
+ document.getElementById("saveLineup").onclick=()=>{let n=Object.keys(s.lineup).filter(k=>s.lineup[k]).length;if(n!==11)return alert("Debes tener exactamente 11 titulares.");save();alert("Alineación guardada.")};
+ bindNav();
+}
+function assignPlayer(id){
+ if(!selectedSlot)return alert("Primero selecciona una posición del campo.");
+ let p=s.players.find(x=>x.id===id);if(!p)return;
+ if(p.p!==selectedSlot.pos)return alert("Ese jugador es "+p.p+" y esta casilla requiere "+selectedSlot.pos+".");
+ Object.keys(s.lineup).forEach(k=>{if(s.lineup[k]===id)delete s.lineup[k]});
+ s.lineup[selectedSlot.key]=id;save();selectedSlot=null;lineup();
+}
+function table(){
+ T.textContent="Clasificación";
+ // No inventamos rivales: el prototipo local solo conoce los clubes creados realmente en este dispositivo.
+ let prize=s.settings.rewardRankPool;
+ A.innerHTML='<div class="wrap">'+nav("table")+'<section class="card"><div class="sectionTitle"><div><h3>Clasificación · '+s.league+'</h3><div class="muted">Jornada '+s.settings.startRound+' · solo equipos reales de la liga</div></div></div><div class="classRow"><b>1</b><div><b>'+s.team+'</b><div class="club">'+(s.manager||"Mánager")+'</div></div><b>'+s.pointsTotal+' pts</b><span class="hideM">'+s.pointsRound+' esta jornada</span><span class="hideM">—</span></div><div class="alert" style="margin-top:12px">En esta PWA local todavía solo existe tu club. Cuando conectemos el backend multiusuario, aquí aparecerán automáticamente los demás equipos reales de la liga, sin equipos ficticios.</div></section><section class="card"><h3>Primas de clasificación</h3><div class="summaryline"><span>Bolsa de ranking por jornada</span><b>'+euro(prize)+'</b></div><div class="summaryline"><span>Modo de reparto</span><b>'+s.settings.rewardRankMode+'</b></div></section></div>';
+ bindNav();
+}
 function economy(){
  T.textContent="Economía";
  A.innerHTML='<div class="wrap">'+nav("economy")+'<section class="card"><h3>Patrimonio del club</h3><div class="summaryline"><span>Efectivo</span><b>'+money(s.cash)+'</b></div><div class="summaryline"><span>Valor plantilla</span><b>'+money(value(s.players))+'</b></div><div class="summaryline"><span>Valor cartera bolsa</span><b>'+money(portfolioValue())+'</b></div><div class="summaryline"><span>Ingresos liga</span><b>'+money(s.leagueIncome)+'</b></div><div class="summaryline"><span>Ingresos sponsors</span><b>'+money(s.sponsorIncome)+'</b></div><div class="summaryline"><span>Dividendos pagados</span><b>'+money(s.dividendsPaid)+'</b></div><div class="summaryline"><span><b>Patrimonio actual</b></span><b>'+money(totalWealth())+'</b></div></section><section class="card"><h3>Movimientos</h3>'+(s.transactions.slice(0,20).map(x=>'<div class="news">'+x+'</div>').join("")||'<div class="muted">Todavía no hay operaciones.</div>')+'</section></div>';bindNav()
@@ -166,7 +208,7 @@ function settings(){
 function renderSettings(tab){
  let p=document.getElementById("settingsPanel");
  if(tab==="basic")p.innerHTML='<section class="card"><h3>Configuración general</h3><div class="grid2"><div class="field"><label>Patrimonio inicial</label><input id="cfgWealth" type="number" value="'+s.settings.wealth+'"></div><div class="field"><label>Valor objetivo plantilla</label><input id="cfgTarget" type="number" value="'+s.settings.target+'"></div></div><div class="field"><label>Sistema de puntuación</label><select id="cfgScoring"><option '+(s.settings.scoring==="Configurable"?'selected':'')+'>Configurable</option><option>Estadísticas</option><option>Mixto</option></select></div><button class="primary" id="saveBasic">Guardar</button></section>';
- if(tab==="rewards")p.innerHTML='<section class="card"><div class="sectionTitle"><div><h3>Recompensas</h3><div class="muted">Unidades en euros (€). Valores estándar de Futmondo para su campeonato por divisiones de LaLiga.</div></div><button class="secondary" id="presetRewards">Restaurar Futmondo</button></div><div class="field"><label>Prima por punto (€ / punto)</label><input id="rewardPoint" type="number" step="10000" value="'+s.settings.rewardPerPoint+'"></div><div class="grid2"><div class="field"><label>Reparto por ranking</label><select id="rankMode"><option '+(s.settings.rewardRankMode==="5 últimos"?"selected":"")+'>5 últimos</option><option '+(s.settings.rewardRankMode==="5 primeros"?"selected":"")+'>5 primeros</option><option '+(s.settings.rewardRankMode==="3 últimos"?"selected":"")+'>3 últimos</option><option '+(s.settings.rewardRankMode==="3 primeros"?"selected":"")+'>3 primeros</option></select></div><div class="field"><label>Bolsa total de ranking (€ / jornada)</label><input id="rankPool" type="number" step="100000" value="'+s.settings.rewardRankPool+'"></div><div class="field"><label>Por jugador en XI ideal (€)</label><input id="idealXI" type="number" step="100000" value="'+s.settings.rewardIdealXI+'"></div><div class="field"><label>Por tener el MVP (€)</label><input id="mvpReward" type="number" step="100000" value="'+s.settings.rewardMVP+'"></div></div><div class="ok"><b>Preset Futmondo:</b> 100.000 €/punto · 20.000.000 € de ranking entre 5 equipos · 1.000.000 €/jugador en XI ideal · 3.000.000 € por MVP.</div><div id="rankPreview" class="card" style="margin-top:10px"></div><div class="alert">El límite de sponsor y dividendo se calcula desde estas primas para que nunca creen una recompensa individual superior a la economía de la liga.</div><button class="primary" id="saveRewards" style="margin-top:10px">Guardar recompensas</button></section>';
+ if(tab==="rewards")p.innerHTML='<section class="card"><div class="sectionTitle"><div><h3>Recompensas</h3><div class="muted">Unidades en euros (€). Valores orientativos del mismo orden que un fantasy tipo Futmondo. Todos son editables.</div></div><button class="secondary" id="presetRewards">Restaurar orientativo</button></div><div class="field"><label>Prima por punto (€ / punto)</label><input id="rewardPoint" type="number" step="10000" value="'+s.settings.rewardPerPoint+'"></div><div class="grid2"><div class="field"><label>Reparto por ranking</label><select id="rankMode"><option '+(s.settings.rewardRankMode==="5 últimos"?"selected":"")+'>5 últimos</option><option '+(s.settings.rewardRankMode==="5 primeros"?"selected":"")+'>5 primeros</option><option '+(s.settings.rewardRankMode==="3 últimos"?"selected":"")+'>3 últimos</option><option '+(s.settings.rewardRankMode==="3 primeros"?"selected":"")+'>3 primeros</option></select></div><div class="field"><label>Bolsa total de ranking (€ / jornada)</label><input id="rankPool" type="number" step="100000" value="'+s.settings.rewardRankPool+'"></div><div class="field"><label>Por jugador en XI ideal (€)</label><input id="idealXI" type="number" step="100000" value="'+s.settings.rewardIdealXI+'"></div><div class="field"><label>Por tener el MVP (€)</label><input id="mvpReward" type="number" step="100000" value="'+s.settings.rewardMVP+'"></div></div><div class="ok"><b>Preset orientativo tipo Futmondo:</b> 100.000 €/punto · 20.000.000 € de ranking entre 5 equipos · 1.000.000 €/jugador en XI ideal · 3.000.000 € por MVP.</div><div id="rankPreview" class="card" style="margin-top:10px"></div><div class="alert">El límite de sponsor y dividendo se calcula desde estas primas para que nunca creen una recompensa individual superior a la economía de la liga.</div><button class="primary" id="saveRewards" style="margin-top:10px">Guardar recompensas</button></section>';
  if(tab==="marketCfg")p.innerHTML='<section class="card"><h3>Mercado</h3><div class="grid2"><div class="field"><label>Jugadores diarios</label><input id="cfgMarketCount" type="number" value="'+s.settings.marketCount+'"></div><div class="field"><label>Venta inmediata (%)</label><input id="cfgSalePct" type="number" value="'+s.settings.instantSalePct+'"></div><div class="field"><label>Cláusula sobre valor (%)</label><input id="cfgClause" type="number" value="'+s.settings.clausePct+'"></div><div class="field"><label>Protección tras fichaje (días)</label><input id="cfgProtect" type="number" value="'+s.settings.protectDays+'"></div></div><div class="switchrow"><span>Pujas secretas</span><input id="cfgSecret" type="checkbox" '+(s.settings.bidsSecret?'checked':'')+'></div><div class="switchrow"><span>Bloqueos de jugadores</span><input id="cfgBlocks" type="checkbox" '+(s.settings.blocks?'checked':'')+'></div><button class="primary" id="saveMarketCfg">Guardar</button></section>';
  if(tab==="sponsorsCfg")p.innerHTML='<section class="card"><h3>Sponsors</h3><div class="switchrow"><span>Patrocinadores activos</span><input id="cfgSponsors" type="checkbox" '+(s.settings.sponsors?'checked':'')+'></div><div class="rangeRow"><input id="cfgSponsorPct" type="range" min="0" max="100" value="'+s.settings.maxSponsorPct+'"><input id="cfgSponsorPctNum" type="number" min="0" max="100" value="'+s.settings.maxSponsorPct+'"></div><p class="muted">Máximo variable sponsor = % del límite económico de liga. Nunca puede superarlo.</p><div class="ok">Máximo actual: <b>'+euro(maxLeagueReward()*s.settings.maxSponsorPct/100)+'</b></div><button class="primary" id="saveSponsorsCfg">Guardar</button></section>';
  if(tab==="stocksCfg")p.innerHTML='<section class="card"><h3>Bolsa e IPO</h3><div class="switchrow"><span>Bolsa interna activa</span><input id="cfgStocks" type="checkbox" '+(s.settings.stocks?'checked':'')+'></div><div class="switchrow"><span>Permitir salida a bolsa del club</span><input id="cfgIPO" type="checkbox" '+(s.settings.ipo?'checked':'')+'></div><div class="grid2"><div class="field"><label>Noticias mañana</label><input id="n1" value="'+s.settings.stockNewsMorning+'"></div><div class="field"><label>Actualización mañana</label><input id="u1" value="'+s.settings.stockUpdateMorning+'"></div><div class="field"><label>Noticias tarde</label><input id="n2" value="'+s.settings.stockNewsEvening+'"></div><div class="field"><label>Actualización tarde</label><input id="u2" value="'+s.settings.stockUpdateEvening+'"></div></div><div class="rangeRow"><input id="cfgDivPct" type="range" min="0" max="100" value="'+s.settings.maxDividendPct+'"><input id="cfgDivPctNum" type="number" min="0" max="100" value="'+s.settings.maxDividendPct+'"></div><p class="muted">El dividendo total del club por jornada se limita al % del máximo económico de liga.</p><div class="ok">Máximo dividendo/jornada: <b>'+euro(maxLeagueReward()*s.settings.maxDividendPct/100)+'</b></div><button class="primary" id="saveStocksCfg">Guardar</button></section>';
@@ -193,6 +235,6 @@ function news(){
  T.textContent="Tablón";
  A.innerHTML='<div class="wrap">'+nav("news")+'<section class="card"><h3>Noticias de liga</h3><div class="news">06:00 · JoaoTech anuncia un nuevo acuerdo tecnológico. El mercado interpreta la noticia con optimismo.</div><div class="news">17:00 · Construcciones La Carral obtiene un contrato importante en una gran ciudad.</div><div class="news">Mercado · Se han publicado nuevos jugadores para la sesión diaria.</div></section></div>';bindNav()
 }
-const pages={home,team,market,stocks,economy,settings,news};
+const pages={home,team,lineup,market,table,stocks,economy,settings,news};
 if(s.step==="league")leagueCreate();else if(s.step==="team")teamCreate();else home();
 })();
