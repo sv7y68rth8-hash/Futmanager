@@ -1,7 +1,7 @@
 {
   "name": "Futmanager",
   "short_name": "Futmanager",
-  "start_url": "./?v=040",
+  "start_url": "./?v=041",
   "display": "standalone",
   "background_color": "#f3f6f4",
   "theme_color": "#0c1712",
